@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F8F9FA;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass-input {
+    @apply bg-white/70 border border-slate-200/80 backdrop-blur-sm transition-all duration-200;
+  }
+  .glass-input:focus {
+    @apply border-brand-blue outline-none ring-2 ring-brand-blue/20 bg-white;
+  }
+
+  .nav-item {
+    @apply transition-all duration-200 cursor-pointer px-4 py-3 rounded-xl flex items-center gap-3;
+  }
+  .nav-item:hover, .nav-item.active {
+    @apply bg-brand-lavender text-brand-blue font-semibold;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #f0f2f5 25%, #e8eaed 50%, #f0f2f5 75%);
+    background-size: 700px 100%;
+    @apply animate-shimmer rounded-xl;
+  }
+}
