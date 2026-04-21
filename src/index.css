@@ -1,13 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  
+  --color-brand-bg: #F8F9FA;
+  --color-brand-dark: #1a1a1a;
+  --color-brand-charcoal: #2D3748;
+  --color-brand-mint: #A7F3D0;
+  --color-brand-mintdark: #059669;
+  --color-brand-lavender: #E0E7FF;
+  --color-brand-blue: #378ADD;
+  --color-brand-red: #FCA5A5;
+
+  --radius-3xl: 24px;
+
+  --shadow-card: 0 2px 15px rgba(0,0,0,0.02);
+  --shadow-card-lg: 0 4px 20px rgba(0,0,0,0.02);
+  --shadow-sidebar: 2px 0 12px rgba(0,0,0,0.03);
+
+  --animate-shimmer: shimmer 1.5s infinite;
+  --animate-fade-in: fadeIn 0.3s ease-in-out;
+
+  @keyframes shimmer {
+    0% { background-position: -700px 0; }
+    100% { background-position: 700px 0; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
 
 @layer base {
   body {
-    background-color: #F8F9FA;
-    color: #1a1a1a;
+    background-color: var(--color-brand-bg);
+    color: var(--color-brand-dark);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
