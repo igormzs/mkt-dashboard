@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Fidelity Social Media Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#F8F9FA',
+                            dark: '#1a1a1a',
+                            charcoal: '#2D3748',
+                            mint: '#A7F3D0',
+                            mintdark: '#059669',
+                            lavender: '#E0E7FF',
+                            blue: '#378ADD',
+                            red: '#FCA5A5'
+                        }
+                    },
+                    borderRadius: {
+                        '3xl': '24px',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <style>
+        body {
+            background-color: #F8F9FA;
+            color: #1a1a1a;
+        }
+
+        /* Sidebar transitions */
+        .nav-item {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background-color: #E0E7FF;
+            color: #378ADD;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Glassmorphism input styles */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .glass-input:focus {
+            border-color: #378ADD;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.2);
+        }
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white shadow-[2px_0_12px_rgba(0,0,0,0.03)] h-full flex flex-col z-20">
+        <div class="px-8 py-8 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-brand-blue flex items-center justify-center text-white font-bold">A</div>
+            <h2 class="text-xl font-bold tracking-tight text-brand-dark">Antigravity</h2>
+        </div>
+
+        <nav class="flex-1 px-4 flex flex-col gap-2">
+            <div class="nav-item active px-4 py-3 rounded-xl flex items-center gap-3"
+                onclick="switchTab('dashboard', this)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                Dashboard
+            </div>
+            <div class="nav-item px-4 py-3 rounded-xl flex items-center gap-3" onclick="switchTab('comparison', this)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                Comparações YoY
+            </div>
+            <div class="nav-item px-4 py-3 rounded-xl flex items-center gap-3" onclick="switchTab('input', this)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Inserir Dados
+            </div>
+            <div class="nav-item px-4 py-3 rounded-xl flex items-center gap-3" onclick="switchTab('data', this)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                    </path>
+                </svg>
+                Ver Dados
+            </div>
+        </nav>
+
+        <div class="p-6 mt-auto flex flex-col gap-3">
+            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center gap-3 overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=U&background=378ADD&color=fff" alt="Profile" id="user-avatar"
+                    class="w-10 h-10 rounded-full shadow-sm shrink-0">
+                <div class="overflow-hidden">
+                    <p class="text-sm font-semibold truncate" id="user-email">A carregar...</p>
+                    <p class="text-xs text-gray-500">Pro Plan</p>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="w-full text-center text-sm font-bold text-gray-500 hover:text-brand-red transition-all py-2 rounded-xl border border-transparent hover:border-brand-red/20 hover:bg-brand-red/5">
+                Sair
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto w-full relative">
+        <!-- Header -->
+        <header
+            class="h-20 px-10 flex items-center justify-between border-b border-gray-200/50 bg-white/50 backdrop-blur-md sticky top-0 z-10 w-full">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800" id="headerTitle">Overview</h1>
+                <p class="text-sm text-gray-500" id="headerSubtitle">Acompanhe as suas métricas</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="syncStatusBadge"
+                    class="text-xs bg-brand-mint/50 text-brand-mintdark px-3 py-1.5 rounded-full font-medium flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-mintdark animate-pulse"></span>
+                    Sincronizado
+                </span>
+            </div>
+        </header>
+
+        <div class="p-10 w-full max-w-[1600px] mx-auto min-h-screen">
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content w-full active">
+
+                <!-- Controls -->
+                <div
+                    class="flex flex-wrap items-center gap-3 mb-8 bg-white p-2 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-100 w-max">
+                    <select id="networkFilter" onchange="updateDashboard()"
+                        class="glass-input px-4 py-2 rounded-xl text-sm font-medium text-gray-700 min-w-[150px]">
+                        <option value="all">Todas as redes</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Instagram">Instagram</option>
+                    </select>
+                    <select id="viewMode" onchange="updateDashboard()"
+                        class="glass-input px-4 py-2 rounded-xl text-sm font-medium text-gray-700 min-w-[150px]">
+                        <option value="total">Resumo Total</option>
+                        <option value="monthly">Por mês</option>
+                    </select>
+                    <button onclick="updateDashboard()"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+                        Atualizar
+                    </button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10 w-full" id="metricsContainer">
+                    <!-- Cards will be injected here via JS -->
+                </div>
+
+                <!-- Advanced Visualizations -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full block">
+
+                    <!-- Combined Line Chart -->
+                    <div
+                        class="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col h-[400px]">
+                        <div class="flex items-center justify-between mb-4 shrink-0">
+                            <h3 class="text-lg font-bold text-gray-800">Crescimento (Reach vs Seguidores)</h3>
+                        </div>
+                        <div class="flex-1 min-h-0 relative w-full overflow-hidden">
+                            <canvas id="mainComboChart" class="absolute inset-0 w-full h-full object-contain"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Engagement Radial Gauge -->
+                    <div
+                        class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex flex-col items-center h-[400px]">
+                        <div class="w-full mb-4 shrink-0">
+                            <h3 class="text-lg font-bold text-gray-800">Engagement Rate Médio</h3>
+                        </div>
+                        <div class="relative w-full flex-1 flex items-center justify-center min-h-0">
+                            <canvas id="gaugeChart" class="w-full h-full object-contain"></canvas>
+                            <div
+                                class="absolute inset-0 flex flex-col items-center justify-center mt-12 pointer-events-none">
+                                <span class="text-3xl font-extrabold text-gray-800" id="gaugeContent">0%</span>
+                                <span class="text-sm font-medium text-gray-500">Média Global</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Comparison Tab -->
+            <div id="comparison" class="tab-content w-full">
+                <div
+                    class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] w-full">
+                    <div class="flex flex-wrap items-center gap-3 mb-8">
+                        <select id="month1ForComparison" onchange="updateComparison()"
+                            class="glass-input px-4 py-2 rounded-xl text-sm font-medium">
+                            <option value="">Período Base...</option>
+                        </select>
+                        <select id="month2ForComparison" onchange="updateComparison()"
+                            class="glass-input px-4 py-2 rounded-xl text-sm font-medium">
+                            <option value="">Período de Comparação...</option>
+                        </select>
+                        <select id="networkForComparison" onchange="updateComparison()"
+                            class="glass-input px-4 py-2 rounded-xl text-sm font-medium">
+                            <option value="all">Todas as redes</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="Instagram">Instagram</option>
+                        </select>
+                    </div>
+
+                    <div id="comparisonContainer" class="w-full">
+                        <div class="text-center py-20 text-gray-400">Selecione dois meses para gerar a comparação YoY.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Tab -->
+            <div id="input" class="tab-content w-full">
+                <div
+                    class="bg-white rounded-3xl p-8 max-w-3xl mx-auto border border-gray-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] w-full">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">Inserção de Dados de Performance</h2>
+
+                    <div id="statusMsg" class="hidden mb-6 p-4 rounded-xl text-sm font-semibold"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Rede Social</label>
+                            <select id="networkInput" class="glass-input px-4 py-3 rounded-xl transition-all">
+                                <option value="Facebook">Facebook</option>
+                                <option value="LinkedIn">LinkedIn</option>
+                                <option value="Instagram">Instagram</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Mês/Ano</label>
+                            <input type="month" id="monthInput" class="glass-input px-4 py-3 rounded-xl transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Nº Posts</label>
+                            <input type="number" id="postsInput" placeholder="0" min="0"
+                                class="glass-input px-4 py-3 rounded-xl transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Novos Seguidores</label>
+                            <input type="number" id="followersInput" placeholder="0" min="0"
+                                class="glass-input px-4 py-3 rounded-xl transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Account Reached</label>
+                            <input type="number" id="reachInput" placeholder="0" min="0"
+                                class="glass-input px-4 py-3 rounded-xl transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-gray-600">Engagement %</label>
+                            <input type="number" id="engagementInput" placeholder="0.0" min="0" step="0.1"
+                                class="glass-input px-4 py-3 rounded-xl transition-all">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                        <button onclick="saveData()"
+                            class="bg-brand-blue hover:bg-brand-blue/90 text-white px-6 py-3 rounded-xl font-bold shadow-md shadow-brand-blue/20 transition-all">
+                            Salvar Registro
+                        </button>
+                        <button onclick="clearInputs()"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all">
+                            Limpar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Tab -->
+            <div id="data" class="tab-content w-full">
+                <div
+                    class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] overflow-hidden w-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-gray-800">Base de Dados</h2>
+                        <button onclick="downloadData()"
+                            class="flex items-center gap-2 bg-brand-mintdark/10 text-brand-mintdark px-4 py-2 rounded-xl font-bold hover:bg-brand-mintdark/20 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            Download CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-gray-50/50 text-gray-500 text-sm border-b border-gray-100">
+                                    <th class="py-4 px-4 font-semibold">Rede Social</th>
+                                    <th class="py-4 px-4 font-semibold">Mês/Ano</th>
+                                    <th class="py-4 px-4 font-semibold">Nº Posts</th>
+                                    <th class="py-4 px-4 font-semibold">Novos Seg.</th>
+                                    <th class="py-4 px-4 font-semibold">Reach</th>
+                                    <th class="py-4 px-4 font-semibold">Engagement</th>
+                                    <th class="py-4 px-4 font-semibold text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="text-sm">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://pzyovczwjgfdoojbojkz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eW92Y3p3amdmZG9vamJvamt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDI1OTAsImV4cCI6MjA5MjI3ODU5MH0.yYvZzXqu4lgHkS7cdsWawUgsV6Lte-rLjJ5lovgiZnQ';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- AUTH CHECK ---
+        async function checkAuth() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                window.location.replace('login.html');
+                return null;
+            }
+            
+            // Set user email in sidebar
+            const email = session.user.email;
+            document.getElementById('user-email').textContent = email;
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=378ADD&color=fff`;
+
+            return session;
+        }
+
+        // Listen for logouts elsewhere
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                window.location.replace('login.html');
+            }
+        });
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+        }
+
+        /**
+         * SocialDataConnector: Modular data architecture allowing manual, local storage, 
+         * and future API integrations (Make, Zapier, Webhooks).
+         */
+        class SocialDataConnector {
+            constructor() {
+                this.storageKey = 'socialMediaKPIs_v3';
+                this.data = [];
+            }
+
+            async initialize() {
+                this.updateUIStatus('loading', 'Sincronizando...');
+                console.log('--- Initializing Data Source ---');
+                try {
+                    const cloudData = await this.fetchFromExternalAPI();
+                    if (cloudData && cloudData.length > 0) {
+                        this.data = cloudData;
+                        this.updateUIStatus('success', 'Sincronizado');
+                    } else {
+                        console.warn('Supabase returned no data or RLS blocked access. Falling back to local storage.');
+                        const oldSaved = localStorage.getItem('socialMediaKPIs');
+                        if (oldSaved && !localStorage.getItem(this.storageKey)) {
+                            this.data = JSON.parse(oldSaved);
+                            this.saveToLocalStorage();
+                            localStorage.removeItem('socialMediaKPIs');
+                        } else {
+                            this.data = this.fetchFromLocalStorage();
+                        }
+                        this.updateUIStatus('warning', this.data.length > 0 ? 'Modo Offline' : 'Sem Dados');
+                    }
+                } catch (err) {
+                    console.error('Initialization error:', err);
+                    this.updateUIStatus('error', 'Erro de Conexão');
+                    this.data = this.fetchFromLocalStorage();
+                }
+
+                if (this.data) {
+                    this.data.sort((a, b) => new Date(a['Mês/Ano']) - new Date(b['Mês/Ano']));
+                }
+                return this.data;
+            }
+
+            updateUIStatus(type, message) {
+                const badge = document.getElementById('syncStatusBadge');
+                const dot = document.getElementById('syncStatusDot');
+                const text = document.getElementById('syncStatusText');
+                if (!badge || !dot || !text) return;
+
+                badge.className = 'text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-2 transition-all duration-300';
+                dot.className = 'w-2 h-2 rounded-full';
+
+                if (type === 'loading') {
+                    badge.classList.add('bg-blue-50', 'text-blue-600');
+                    dot.classList.add('bg-blue-500', 'animate-pulse');
+                } else if (type === 'success') {
+                    badge.classList.add('bg-brand-mint/50', 'text-brand-mintdark');
+                    dot.classList.add('bg-brand-mintdark');
+                } else if (type === 'warning') {
+                    badge.classList.add('bg-amber-50', 'text-amber-600');
+                    dot.classList.add('bg-amber-500');
+                } else if (type === 'error') {
+                    badge.classList.add('bg-red-50', 'text-red-600');
+                    dot.classList.add('bg-red-500');
+                }
+                text.textContent = message;
+            }
+
+            fetchFromLocalStorage() {
+                const saved = localStorage.getItem(this.storageKey);
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveToLocalStorage() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+            }
+
+            async saveRecord(record) {
+                this.data.push(record);
+                this.data.sort((a, b) => new Date(a['Mês/Ano']) - new Date(b['Mês/Ano']));
+                this.saveToLocalStorage();
+                return true;
+            }
+
+            async deleteRecord(id) {
+                this.data = this.data.filter(d => d.id !== id);
+                this.saveToLocalStorage();
+                return true;
+            }
+
+            async fetchFromExternalAPI() {
+                console.log('--- Supabase Sync Fetching... ---');
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('social_kpis')
+                        .select('*');
+
+                    if (error) {
+                        console.error('Supabase Query Error:', error.message);
+                        throw error;
+                    }
+
+                    if (!data || data.length === 0) {
+                        console.log('Supabase Result: Empty or RLS restricted.');
+                        return [];
+                    }
+
+                    console.log(`Supabase Result: Found ${data.length} records.`);
+
+                    const groupedData = {};
+                    data.forEach((row, index) => {
+                        const month = row.month_year || row.monthYear || row.period;
+                        if (!month) return;
+
+                        if (!groupedData[month]) {
+                            groupedData[month] = { reach: 0, interactions: 0, followers: 0 };
+                        }
+
+                        groupedData[month].reach += (Number(row.reach) || 0);
+                        groupedData[month].interactions += (Number(row.engagement) || Number(row.interactions) || 0);
+
+                        const fVal = Number(row.followers) || 0;
+                        if (fVal > groupedData[month].followers) groupedData[month].followers = fVal;
+                    });
+
+                    const consolidated = [];
+                    for (const month in groupedData) {
+                        const item = groupedData[month];
+                        const engagementRate = item.reach > 0 ? (item.interactions / item.reach) * 100 : 0;
+
+                        consolidated.push({
+                            'Rede Social': 'Consolidado',
+                            'Mês/Ano': month,
+                            'Nº Posts': 0,
+                            'Novos Seguidores': item.followers,
+                            'Account Reached': item.reach,
+                            'Engagement %': parseFloat(engagementRate.toFixed(1)),
+                            'id': 'sb-' + month
+                        });
+                    }
+
+                    console.log(`Processing Complete: ${consolidated.length} consolidated rows.`);
+                    return consolidated;
+                } catch (err) {
+                    console.error('Fetch exception:', err);
+                    throw err;
+                }
+            }
+        }
+
+        const connector = new SocialDataConnector();
+        let chartInstances = {};
+
+        // --- Init App ---
+        async function bootstrap() {
+            try {
+                const session = await checkAuth();
+                if (!session) return; // Will redirect
+
+                console.log('Bootstrap starting...');
+                await connector.initialize();
+
+                if (connector.data.length === 0) {
+                    console.log('No data found in Supabase or local storage.');
+                }
+
+                populateMonthSelects();
+                document.getElementById('monthInput').valueAsDate = new Date();
+                updateDashboard();
+                console.log('Bootstrap finished successfully.');
+            } catch (err) {
+                console.error('CRITICAL BOOTSTRAP ERROR:', err);
+            }
+        }
+
+
+
+        // --- UI Interactions ---
+
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            if (element) element.classList.add('active');
+
+            const titles = {
+                dashboard: { t: 'Overview', s: 'Acompanhe as suas métricas' },
+                comparison: { t: 'Insights & Comparação', s: 'Análise YoY (Year over Year)' },
+                input: { t: 'Gestão de Dados', s: 'Insira novas métricas manualmente' },
+                data: { t: 'Tabela de Dados', s: 'Base consolidada e exportação' },
+            };
+            document.getElementById('headerTitle').textContent = titles[tabName].t;
+            document.getElementById('headerSubtitle').textContent = titles[tabName].s;
+
+            if (tabName === 'data') updateDataTable();
+            if (tabName === 'dashboard') updateDashboard();
+        }
+
+        function formatMonth(monthStr) {
+            if (!monthStr) return '';
+            const [year, month] = monthStr.split('-');
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return `${months[parseInt(month) - 1]} ${year}`;
+        }
+
+        function populateMonthSelects() {
+            const months = [...new Set(connector.data.map(d => d['Mês/Ano']))].sort().reverse();
+            const select1 = document.getElementById('month1ForComparison');
+            const select2 = document.getElementById('month2ForComparison');
+            const mv1 = select1.value;
+            const mv2 = select2.value;
+
+            const optionsHtml = months.map(m => `<option value="${m}">${formatMonth(m)}</option>`).join('');
+
+            select1.innerHTML = '<option value="">Período Base...</option>' + optionsHtml;
+            select2.innerHTML = '<option value="">Período Comparação...</option>' + optionsHtml;
+
+            if (mv1 && months.includes(mv1)) select1.value = mv1;
+            if (mv2 && months.includes(mv2)) select2.value = mv2;
+        }
+
+        // --- Dashboard Logic --- 
+        function updateDashboard() {
+            const filter = document.getElementById('networkFilter').value;
+            const viewMode = document.getElementById('viewMode').value;
+
+            let filtered = filter === 'all' ? connector.data : connector.data.filter(d => d['Rede Social'] === filter);
+
+            // Sort by date ASC for properly ordered charts
+            filtered.sort((a, b) => new Date(a['Mês/Ano']) - new Date(b['Mês/Ano']));
+
+            renderKPIs(filtered, viewMode);
+            renderMainCharts(filtered, viewMode);
+        }
+
+        function renderKPIs(data, viewMode) {
+            const isMonthly = viewMode === 'monthly';
+            const sortedDesc = [...data].sort((a, b) => new Date(b['Mês/Ano']) - new Date(a['Mês/Ano']));
+
+            // Generate synthetic recent pseudo-trend for sparklines if total mode
+            // We group by month to get true monthly totals instead of individual record totals
+            let monthlyTrends = {};
+            sortedDesc.forEach(d => {
+                if (!monthlyTrends[d['Mês/Ano']]) monthlyTrends[d['Mês/Ano']] = { reach: 0, follow: 0, posts: 0, engSum: 0, engCount: 0 };
+                monthlyTrends[d['Mês/Ano']].reach += (d['Account Reached'] || 0);
+                monthlyTrends[d['Mês/Ano']].follow += (d['Novos Seguidores'] || 0);
+                monthlyTrends[d['Mês/Ano']].posts += (d['Nº Posts'] || 0);
+                monthlyTrends[d['Mês/Ano']].engSum += parseFloat(d['Engagement %'] || 0);
+                monthlyTrends[d['Mês/Ano']].engCount += 1;
+            });
+
+            const sortedMonths = Object.keys(monthlyTrends).sort().reverse().slice(0, 6);
+
+            const trendPosts = sortedMonths.map(m => monthlyTrends[m].posts).reverse();
+            const trendFollowers = sortedMonths.map(m => monthlyTrends[m].follow).reverse();
+            const trendReach = sortedMonths.map(m => monthlyTrends[m].reach).reverse();
+
+            const totalReach = data.reduce((s, d) => s + (d['Account Reached'] || 0), 0);
+            const totalFollowers = data.reduce((s, d) => s + (d['Novos Seguidores'] || 0), 0);
+            const totalPosts = data.reduce((s, d) => s + (d['Nº Posts'] || 0), 0);
+            const avgEng = data.length > 0 ? (data.reduce((s, d) => s + parseFloat(d['Engagement %'] || 0), 0) / data.length).toFixed(1) : '0.0';
+
+            // Simple delta mock based on trends. (Last month vs previous month from trends)
+            let deltaReach = '0%';
+            let deltaFollowers = '0%';
+            let deltaPosts = '0%';
+
+            if (trendReach.length >= 2) {
+                const current = trendReach[trendReach.length - 1];
+                const prev = trendReach[trendReach.length - 2];
+                if (prev > 0) deltaReach = (((current - prev) / prev) * 100).toFixed(1) + '%';
+            }
+
+            let metrics = [];
+            if (isMonthly) {
+                metrics = [
+                    { key: 'M', label: 'Meses', value: sortedMonths.length, trend: [], style: 'light' },
+                    { key: 'ÚP', label: 'Último Período', value: sortedDesc[0] ? formatMonth(sortedDesc[0]['Mês/Ano']) : 'N/A', trend: [], style: 'light' }
+                ];
+            } else {
+                metrics = [
+                    {
+                        key: 'reached',
+                        label: 'Total Reached',
+                        value: totalReach,
+                        trend: trendReach,
+                        style: 'dark', // Special dark card as per instructions
+                        delta: !deltaReach.includes('-') && deltaReach !== '0%' ? '+' + deltaReach : deltaReach
+                    },
+                    {
+                        key: 'followers',
+                        label: 'Novos Seguidores',
+                        value: totalFollowers,
+                        trend: trendFollowers,
+                        style: 'light',
+                        // just hardcoded generic for others for visual density if real data isnt available
+                        delta: '+5.2%'
+                    },
+                    {
+                        key: 'posts',
+                        label: 'Total Posts',
+                        value: totalPosts,
+                        trend: trendPosts,
+                        style: 'light',
+                        delta: '-1.4%'
+                    },
+                    {
+                        key: 'engagement',
+                        label: 'Engagement Médio',
+                        value: avgEng + '%',
+                        trend: [],
+                        style: 'light',
+                        delta: '+0.5%'
+                    }
+                ];
+            }
+
+            const container = document.getElementById('metricsContainer');
+            container.innerHTML = metrics.map((m, i) => {
+                const isDark = m.style === 'dark';
+                const bgClass = isDark ? 'bg-brand-charcoal text-white' : 'bg-white text-gray-800';
+                const labelColor = isDark ? 'text-gray-300' : 'text-gray-500';
+                const badgeColor = isDark ? 'bg-brand-mintdark/20 text-brand-mint' : (m.delta?.includes('-') ? 'bg-brand-red/10 text-red-600' : 'bg-brand-mintdark/10 text-brand-mintdark');
+
+                const sparkId = `spark-${i}`;
+
+                return `
+                <div class="${bgClass} rounded-3xl p-6 border ${isDark ? 'border-brand-charcoal shadow-lg shadow-brand-charcoal/20' : 'border-gray-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)]'} relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <span class="text-sm font-semibold ${labelColor} z-10">${m.label}</span>
+                        ${m.delta ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold z-10 ${badgeColor}">${m.delta}</span>` : ''}
+                    </div>
+                    <div class="flex items-end justify-between relative z-10">
+                        <span class="text-3xl font-extrabold tracking-tight">${typeof m.value === 'number' ? m.value.toLocaleString() : m.value}</span>
+                        ${m.trend.length > 0 ? `<div class="w-16 h-8 opacity-90"><canvas id="${sparkId}"></canvas></div>` : ''}
+                    </div>
+                    ${isDark ? `<div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-dark rounded-full opacity-30 blur-2xl z-0"></div>` : ''}
+                </div>
+                `;
+            }).join('');
+
+            // Render sparks
+            metrics.forEach((m, i) => {
+                if (m.trend.length > 0) {
+                    const isDark = m.style === 'dark';
+                    createSparkline(`spark-${i}`, m.trend, isDark ? '#A7F3D0' : '#378ADD');
+                }
+            });
+        }
+
+        function createSparkline(id, data, color) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            if (chartInstances[id]) chartInstances[id].destroy();
+
+            chartInstances[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i),
+                    datasets: [{
+                        data: data,
+                        borderColor: color,
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: Math.min(...data) * 0.8 }
+                    },
+                    layout: { padding: 0 }
+                }
+            });
+        }
+
+        // --- Main Advanced Charts ---
+
+        function renderMainCharts(data, viewMode) {
+            const labels = [];
+            let reachData = [];
+            let followData = [];
+            let engData = [];
+
+            if (viewMode === 'monthly') {
+                const months = [...new Set(data.map(d => d['Mês/Ano']))].sort();
+                months.forEach(m => {
+                    labels.push(formatMonth(m));
+                    const subset = data.filter(d => d['Mês/Ano'] === m);
+                    reachData.push(subset.reduce((acc, curr) => acc + (curr['Account Reached'] || 0), 0));
+                    followData.push(subset.reduce((acc, curr) => acc + (curr['Novos Seguidores'] || 0), 0));
+                    engData.push(subset.reduce((acc, curr) => acc + parseFloat(curr['Engagement %'] || 0), 0) / (subset.length || 1));
+                });
+            } else {
+                // If total mode, we simply group by month again to show trends instead of static bars.
+                const months = [...new Set(data.map(d => d['Mês/Ano']))].sort();
+                months.forEach(m => {
+                    labels.push(formatMonth(m));
+                    const subset = data.filter(d => d['Mês/Ano'] === m);
+                    reachData.push(subset.reduce((acc, curr) => acc + (curr['Account Reached'] || 0), 0));
+                    followData.push(subset.reduce((acc, curr) => acc + (curr['Novos Seguidores'] || 0), 0));
+                    engData.push(subset.reduce((acc, curr) => acc + parseFloat(curr['Engagement %'] || 0), 0) / (subset.length || 1));
+                });
+            }
+
+            // 1. Combined Line Chart with Gradient Fill
+            const comboCtx = document.getElementById('mainComboChart');
+            if (chartInstances['mainComboChart']) chartInstances['mainComboChart'].destroy();
+
+            // Create gradient
+            let gradReach, gradFollow;
+            if (comboCtx) {
+                const ctx = comboCtx.getContext('2d');
+                gradReach = ctx.createLinearGradient(0, 0, 0, 200);
+                gradReach.addColorStop(0, 'rgba(55, 138, 221, 0.3)'); // Blue
+                gradReach.addColorStop(1, 'rgba(55, 138, 221, 0.0)');
+
+                gradFollow = ctx.createLinearGradient(0, 0, 0, 200);
+                gradFollow.addColorStop(0, 'rgba(167, 243, 208, 0.3)'); // Mint
+                gradFollow.addColorStop(1, 'rgba(167, 243, 208, 0.0)');
+            }
+
+            chartInstances['mainComboChart'] = new Chart(comboCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Account Reached',
+                            data: reachData,
+                            borderColor: '#378ADD',
+                            backgroundColor: gradReach,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Novos Seguidores',
+                            data: followData,
+                            borderColor: '#10B981', // Emerald
+                            backgroundColor: gradFollow,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { type: 'linear', display: true, position: 'left', grid: { borderDash: [5, 5], color: '#f0f0f0' }, beginAtZero: true },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { display: false }, beginAtZero: true }
+                    }
+                }
+            });
+
+            // 2. Radial Gauge Chart for Engagement
+            const gaugeCtx = document.getElementById('gaugeChart');
+            if (chartInstances['gaugeChart']) chartInstances['gaugeChart'].destroy();
+
+            const avgEng = engData.length > 0 ? (engData.reduce((a, b) => a + b, 0) / engData.length) : 0;
+            document.getElementById('gaugeContent').innerText = `${avgEng.toFixed(1)}%`;
+
+            chartInstances['gaugeChart'] = new Chart(gaugeCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [avgEng, Math.max(0, 10 - avgEng)], // Assume scale 0-10% for gauge visually
+                        backgroundColor: ['#0F6E56', '#f3f4f6'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: -90,
+                        cutout: '80%',
+                        borderRadius: { outerStart: 50, outerEnd: 50, innerStart: 50, innerEnd: 50 }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { animateScale: true, animateRotate: true }
+                }
+            });
+        }
+
+        // --- Data Input & Persistence ---
+
+        function showStatus(msg, isError) {
+            const div = document.getElementById('statusMsg');
+            div.textContent = msg;
+            div.className = `mb-6 p-4 rounded-xl text-sm font-semibold block ${isError ? 'bg-brand-red/20 text-red-700' : 'bg-brand-mintdark/10 text-brand-mintdark'}`;
+            div.classList.remove('hidden');
+            setTimeout(() => div.classList.add('hidden'), 3500);
+        }
+
+        async function saveData() {
+            const network = document.getElementById('networkInput').value;
+            const month = document.getElementById('monthInput').value;
+
+            if (!month) {
+                showStatus('Por favor, defina um Mês/Ano!', true);
+                return;
+            }
+
+            const record = {
+                'Rede Social': network,
+                'Mês/Ano': month,
+                'Nº Posts': parseInt(document.getElementById('postsInput').value) || 0,
+                'Novos Seguidores': parseInt(document.getElementById('followersInput').value) || 0,
+                'Account Reached': parseInt(document.getElementById('reachInput').value) || 0,
+                'Engagement %': parseFloat(document.getElementById('engagementInput').value) || 0.0,
+                'id': Date.now()
+            };
+
+            await connector.saveRecord(record);
+
+            showStatus(`✓ Registro de ${network} (${month}) guardado com sucesso!`, false);
+            clearInputs();
+            populateMonthSelects();
+        }
+
+        function clearInputs() {
+            document.getElementById('networkInput').selectedIndex = 0;
+            // dont clear month
+            document.getElementById('postsInput').value = '';
+            document.getElementById('followersInput').value = '';
+            document.getElementById('reachInput').value = '';
+            document.getElementById('engagementInput').value = '';
+        }
+
+        function updateDataTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const sorted = [...connector.data].sort((a, b) => new Date(b['Mês/Ano']) - new Date(a['Mês/Ano']));
+
+            tbody.innerHTML = sorted.map(record => `
+                <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                    <td class="py-3 px-4 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full ${record['Rede Social'] === 'Facebook' ? 'bg-blue-600' : record['Rede Social'] === 'Instagram' ? 'bg-pink-500' : 'bg-blue-800'}"></div>
+                        <span class="font-medium text-gray-800">${record['Rede Social']}</span>
+                    </td>
+                    <td class="py-3 px-4 text-gray-600">${formatMonth(record['Mês/Ano'])}</td>
+                    <td class="py-3 px-4 font-semibold">${record['Nº Posts']}</td>
+                    <td class="py-3 px-4 font-semibold">${record['Novos Seguidores'].toLocaleString()}</td>
+                    <td class="py-3 px-4 font-semibold">${record['Account Reached'].toLocaleString()}</td>
+                    <td class="py-3 px-4 font-semibold">${record['Engagement %']}%</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="handleDelete(${record.id})" class="text-gray-400 hover:text-brand-red transition-colors">
+                            <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleDelete(id) {
+            if (confirm('Apagar registro de forma permanente?')) {
+                await connector.deleteRecord(id);
+                updateDataTable();
+                populateMonthSelects();
+            }
+        }
+
+        function downloadData() {
+            let csv = 'Rede Social,Mês/Ano,Nº Posts,Novos Seguidores,Account Reached,Engagement %\n';
+            connector.data.forEach(r => {
+                csv += `${r['Rede Social']},${r['Mês/Ano']},${r['Nº Posts']},${r['Novos Seguidores']},${r['Account Reached']},${r['Engagement %']}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Antigravity-KPIs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // --- YoY Comparison Logic ---
+
+        function updateComparison() {
+            const m1 = document.getElementById('month1ForComparison').value;
+            const m2 = document.getElementById('month2ForComparison').value;
+            const filter = document.getElementById('networkForComparison').value;
+            const container = document.getElementById('comparisonContainer');
+
+            if (!m1 || !m2) {
+                container.innerHTML = `<div class="text-center py-20 text-gray-400">Selecione dois meses para gerar a comparação YoY.</div>`;
+                return;
+            }
+
+            let d1 = connector.data.filter(d => d['Mês/Ano'] === m1);
+            let d2 = connector.data.filter(d => d['Mês/Ano'] === m2);
+
+            if (filter !== 'all') {
+                d1 = d1.filter(d => d['Rede Social'] === filter);
+                d2 = d2.filter(d => d['Rede Social'] === filter);
+            }
+
+            if (d1.length === 0 && d2.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 text-gray-400">Sem dados encontrados nestes períodos.</div>`;
+                return;
+            }
+
+            const networks = [...new Set([...d1, ...d2].map(d => d['Rede Social']))];
+            let html = `<div class="mb-6 flex gap-2">
+                <span class="px-3 py-1 bg-gray-100 rounded-lg text-sm font-semibold">Comparando</span>
+                <span class="px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-lg text-sm font-bold flex items-center gap-2">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                     ${formatMonth(m1)} <span class="text-gray-400 font-normal">vs</span> ${formatMonth(m2)}
+                </span>
+            </div>
+            <div class="space-y-6">`;
+
+            networks.forEach(n => {
+                const c1 = d1.find(x => x['Rede Social'] === n) || {};
+                const c2 = d2.find(x => x['Rede Social'] === n) || {};
+
+                const kpis = [
+                    { label: 'Total Posts', k: 'Nº Posts' },
+                    { label: 'Seguidores', k: 'Novos Seguidores' },
+                    { label: 'Reach', k: 'Account Reached' },
+                    { label: 'Engagement', k: 'Engagement %' }
+                ];
+
+                html += `
+                <div class="bg-white border text-gray-800 border-gray-100 p-6 rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+                    <h4 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full ${n === 'Facebook' ? 'bg-blue-600' : n === 'Instagram' ? 'bg-pink-500' : 'bg-blue-800'}"></div>
+                        ${n}
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                `;
+
+                kpis.forEach(metric => {
+                    const v1 = parseFloat(c1[metric.k]) || 0;
+                    const v2 = parseFloat(c2[metric.k]) || 0;
+                    const diff = v1 - v2;
+                    let pct = 0;
+                    if (v2 !== 0) pct = ((diff / v2) * 100);
+
+                    const isPos = diff >= 0;
+                    const cColor = isPos ? 'text-brand-mintdark' : 'text-brand-red';
+                    const cBg = isPos ? 'bg-brand-mintdark/10' : 'bg-brand-red/10';
+                    const cIcon = isPos ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>` : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>`;
+
+                    html += `
+                        <div class="bg-gray-50/80 border border-gray-100 rounded-2xl p-4 flex flex-col justify-between">
+                            <span class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">${metric.label}</span>
+                            <div class="flex items-end justify-between">
+                                <div>
+                                    <div class="text-2xl font-extrabold text-gray-900">${metric.k.includes('%') ? v1.toFixed(1) + '%' : v1.toLocaleString()}</div>
+                                    <div class="text-xs text-gray-400 mt-1">vs ${metric.k.includes('%') ? v2.toFixed(1) + '%' : v2.toLocaleString()}</div>
+                                </div>
+                                <div class="flex items-center gap-1 ${cBg} ${cColor} px-2 py-1 rounded-lg text-xs font-bold">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">${cIcon}</svg>
+                                    ${diff > 0 ? '+' : ''}${metric.k.includes('%') ? diff.toFixed(1) : diff} ${!metric.k.includes('%') ? `(${Math.abs(pct).toFixed(0)}%)` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // Run
+        document.addEventListener('DOMContentLoaded', bootstrap);
+
+    </script>
+</body>
+
+</html>

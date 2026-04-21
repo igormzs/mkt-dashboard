@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Antigravity Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#F8F9FA',
+                            dark: '#1a1a1a',
+                            charcoal: '#2D3748',
+                            blue: '#378ADD',
+                            mint: '#A7F3D0',
+                            mintdark: '#059669',
+                            red: '#FCA5A5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <style>
+        body {
+            background-color: #F8F9FA;
+            color: #1a1a1a;
+            background-image: radial-gradient(circle at top right, rgba(55, 138, 221, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(167, 243, 208, 0.1), transparent 40%);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.2s ease;
+        }
+        .glass-input:focus {
+            border-color: #378ADD;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.2);
+            background: #fff;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="glass-panel w-full max-w-md rounded-[32px] p-10 relative overflow-hidden">
+        
+        <!-- Decoration -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-blue rounded-full opacity-10 blur-2xl z-0 pointer-events-none"></div>
+        
+        <div class="relative z-10">
+            <!-- Header -->
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="w-10 h-10 rounded-xl bg-brand-blue flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-blue/30">A</div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-brand-dark">Antigravity</h1>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex p-1 bg-gray-100/80 rounded-xl mb-8">
+                <button id="tab-login" onclick="setMode('login')" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-brand-blue">Sign In</button>
+                <button id="tab-register" onclick="setMode('register')" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-700">Create Account</button>
+            </div>
+
+            <p id="form-subtitle" class="text-sm text-gray-500 mb-6 text-center font-medium">Bem-vindo de volta! Insira os seus dados.</p>
+
+            <!-- Status Message -->
+            <div id="status-message" class="hidden mb-6 p-4 rounded-xl text-sm font-semibold text-center border"></div>
+
+            <!-- Form -->
+            <form id="auth-form" onsubmit="handleSubmit(event)" class="space-y-5">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-gray-700 ml-1">Email</label>
+                    <input type="email" id="email" required placeholder="email@exemplo.com" class="w-full glass-input px-4 py-3 rounded-xl text-sm">
+                </div>
+                
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-gray-700 ml-1">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" minlength="6" class="w-full glass-input px-4 py-3 rounded-xl text-sm">
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-brand-dark hover:bg-black text-white py-3.5 rounded-xl font-bold transition-all shadow-lg flex justify-center items-center gap-2 mt-4">
+                    <span id="btn-text">Entrar</span>
+                </button>
+            </form>
+            
+            <p id="confirm-note" class="hidden text-xs text-center text-gray-400 mt-6 font-medium">
+                Iremos enviar um email com um link para confirmar o seu acesso.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Use the exact same credentials from index.html
+        const SUPABASE_URL = 'https://pzyovczwjgfdoojbojkz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eW92Y3p3amdmZG9vamJvamt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MDI1OTAsImV4cCI6MjA5MjI3ODU5MH0.yYvZzXqu4lgHkS7cdsWawUgsV6Lte-rLjJ5lovgiZnQ';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentMode = 'login'; // 'login' or 'register'
+
+        // Check if already logged in
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSession();
+
+        function setMode(mode) {
+            currentMode = mode;
+            hideMessage();
+            
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const btnText = document.getElementById('btn-text');
+            const subtitle = document.getElementById('form-subtitle');
+            const confirmNote = document.getElementById('confirm-note');
+
+            if (mode === 'login') {
+                tabLogin.className = 'flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-brand-blue';
+                tabRegister.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-700';
+                btnText.textContent = 'Entrar no Dashboard';
+                subtitle.textContent = 'Bem-vindo de volta! Insira os seus dados.';
+                confirmNote.classList.add('hidden');
+            } else {
+                tabRegister.className = 'flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-brand-blue';
+                tabLogin.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-700';
+                btnText.textContent = 'Criar Conta';
+                subtitle.textContent = 'Junte-se a nós para aceder às métricas.';
+                confirmNote.classList.remove('hidden');
+            }
+        }
+
+        function showMessage(text, type = 'success') {
+            const msgEl = document.getElementById('status-message');
+            msgEl.textContent = text;
+            msgEl.className = \`mb-6 p-4 rounded-xl text-sm font-semibold text-center border block \${
+                type === 'success' 
+                ? 'bg-brand-mint/20 border-brand-mint text-brand-mintdark' 
+                : 'bg-brand-red/10 border-brand-red/30 text-red-600'
+            }\`;
+        }
+
+        function hideMessage() {
+            document.getElementById('status-message').classList.add('hidden');
+        }
+
+        function setLoading(isLoading) {
+            const btnText = document.getElementById('btn-text');
+            const btn = document.getElementById('submit-btn');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+                btnText.innerHTML = '<span class="spinner"></span> A processar...';
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btnText.textContent = currentMode === 'login' ? 'Entrar no Dashboard' : 'Criar Conta';
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            hideMessage();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Por favor, preencha todos os campos.', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                if (currentMode === 'login') {
+                    // --- Sign In ---
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password,
+                    });
+
+                    if (error) {
+                        if (error.message.includes('Invalid login credentials')) {
+                            throw new Error('Credenciais inválidas. Verifique o email e a password.');
+                        } else if (error.message.includes('Email not confirmed')) {
+                            throw new Error('Email não confirmado. Por favor, verifique a sua caixa de entrada.');
+                        }
+                        throw error;
+                    }
+                    
+                    // Success! Redirect.
+                    window.location.href = 'index.html';
+
+                } else {
+                    // --- Sign Up ---
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                        // emailRedirectTo defaults to SITE_URL if not specified, 
+                        // but you can pass it specifically if needed:
+                        // options: { emailRedirectTo: window.location.origin + '/login.html' }
+                    });
+
+                    if (error) throw error;
+                    
+                    if (data?.user?.identities?.length === 0) {
+                        throw new Error('Este email já está em uso.');
+                    }
+
+                    // For email confirmation flows, session is null right after signup 
+                    // until the user clicks the link.
+                    if (!data.session) {
+                        showMessage('Conta criada! Por favor, verifique o seu email para confirmar o registo antes de entrar.', 'success');
+                        
+                        // Optionally switch back to login mode
+                        setTimeout(() => {
+                            setMode('login');
+                            document.getElementById('password').value = '';
+                        }, 2000);
+                    } else {
+                        // If auto-confirm is enabled in Supabase
+                        window.location.href = 'index.html';
+                    }
+                }
+            } catch (err) {
+                showMessage(err.message || 'Ocorreu um erro inesperado.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
