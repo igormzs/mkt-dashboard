@@ -31,5 +31,14 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  return { ...state, logout };
+  const updateProfile = async (updates: { first_name?: string; last_name?: string; username?: string; avatar_url?: string; settings?: any }) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: updates
+    });
+    if (error) throw error;
+    setState(prev => ({ ...prev, user: data.user }));
+    return data.user;
+  };
+
+  return { ...state, logout, updateProfile };
 }

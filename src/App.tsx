@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, useNavigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { useAuth } from './hooks/useAuth';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/', element: <AuthGuard><DashboardPage /></AuthGuard> },
+  { path: '/profile', element: <AuthGuard><ProfilePage /></AuthGuard> },
 ]);
 
 export function App() {
