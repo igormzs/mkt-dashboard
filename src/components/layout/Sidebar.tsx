@@ -14,7 +14,7 @@ export function Sidebar({ activeTab, onTabChange, user, onLogout }: SidebarProps
   const displayName = meta.first_name ? `${meta.first_name} ${meta.last_name || ''}` : user?.email || 'Utilizador';
   const displayUsername = meta.username ? `@${meta.username}` : 'Pro Plan';
   
-  const avatarUrl = meta.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=378ADD&color=fff`;
+  const avatarUrl = meta.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=FF7F50&color=fff`;
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /> },
@@ -34,10 +34,9 @@ export function Sidebar({ activeTab, onTabChange, user, onLogout }: SidebarProps
     <aside className="w-64 bg-white shadow-sidebar h-full flex flex-col z-20">
       <div className="px-8 py-8 flex flex-col gap-1 cursor-pointer" onClick={() => navigate('/')}>
         <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Stat-o Logo" className="w-8 h-8 drop-shadow-sm" />
+          <img src="/logo.png" alt="Stat-o Logo" className="w-8 h-8 drop-shadow-sm" />
           <h2 className="text-xl font-bold tracking-tight text-brand-dark">Stat-o</h2>
         </div>
-        <span className="text-[10px] font-semibold text-brand-orange tracking-widest uppercase">All your insights in one place.</span>
       </div>
       <nav className="flex-1 px-4 flex flex-col gap-2">
         {navItems.map((item) => (

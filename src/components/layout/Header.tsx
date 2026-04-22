@@ -11,8 +11,8 @@ export function Header({ title, subtitle, syncStatus }: HeaderProps) {
   let dotClasses = 'bg-blue-500 animate-pulse';
 
   if (syncStatus.type === 'success') {
-    badgeClasses = 'bg-brand-orangelight/50 text-brand-orangedark';
-    dotClasses = 'bg-brand-orangedark animate-pulse';
+    badgeClasses = 'bg-emerald-50 text-emerald-600';
+    dotClasses = 'bg-emerald-500 animate-pulse';
   } else if (syncStatus.type === 'warning') {
     badgeClasses = 'bg-amber-50 text-amber-600';
     dotClasses = 'bg-amber-500';
